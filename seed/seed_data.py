@@ -1,14 +1,16 @@
+# seed/seed_data.py - UPDATED VERSION
 from app import create_app
 from models.user import User
 from models.task import Task
-from utils.database import db
+from extensions import db  # Changed from utils.database
 from datetime import datetime, timedelta
 import random
+import uuid
 
 
 def seed_database():
     """Seed the database with sample data"""
-    app = create_app('development')
+    app = create_app()  # Removed 'development' argument
 
     with app.app_context():
         # Clear existing data
@@ -19,7 +21,6 @@ def seed_database():
         users = []
         for i in range(3):
             user = User(
-                id=f'user_{i + 1}',
                 email=f'user{i + 1}@example.com',
                 username=f'user{i + 1}',
                 name=f'User {i + 1}',
