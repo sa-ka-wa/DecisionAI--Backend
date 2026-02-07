@@ -3,6 +3,7 @@ services:
     name: decisionai-backend
     env: python
     plan: free
+    pythonVersion: "3.12.12"
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
@@ -10,3 +11,4 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: 3.8.18
+    runtime:
