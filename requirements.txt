@@ -16,8 +16,8 @@ alembic==1.16.4
 Flask-RESTful==0.3.10
 marshmallow==3.21.1
 flask-marshmallow==0.15.0
-marshmallow-sqlalchemy==0.29.0
-sqlalchemy-serializer==1.4.22  # Python 3.8 compatible
+marshmallow-sqlalchemy==0.30.0  # Updated for compatibility
+# Removed sqlalchemy-serializer as it's causing conflicts
 
 # --- Security & Utilities ---
 python-dotenv==1.0.0
@@ -47,7 +47,4 @@ oauthlib==3.2.2
 requests-oauthlib==1.3.1
 
 # --- Optional AI/ML (comment out if not needed) ---
-# numpy==1.24.4
-# pandas==2.0.3
-# scikit-learn==1.3.2
 openai==0.28.1
