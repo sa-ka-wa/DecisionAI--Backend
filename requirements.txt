@@ -16,14 +16,14 @@ alembic==1.16.4
 Flask-RESTful==0.3.10
 marshmallow==3.21.1
 flask-marshmallow==0.15.0
-marshmallow-sqlalchemy==0.30.0  # Updated for compatibility
-# Removed sqlalchemy-serializer as it's causing conflicts
+marshmallow-sqlalchemy==0.30.0
 
 # --- Security & Utilities ---
 python-dotenv==1.0.0
 Flask-Cors==4.0.1
 Flask-JWT-Extended==4.5.3
 Flask-Bcrypt==1.0.1
+Flask-Mail==0.9.1  # <-- Added
 blinker==1.9.0
 python-dateutil==2.8.2
 fpdf2==2.7.7
