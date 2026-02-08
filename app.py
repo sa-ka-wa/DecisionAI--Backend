@@ -3,7 +3,7 @@ from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 import os
 import logging
-from extensions import db, migrate, jwt, cors
+from extensions import db, migrate, jwt, cors, bcrypt
 
 def create_app():
     """Factory pattern for Flask app"""
@@ -26,6 +26,7 @@ def create_app():
     app.config['DEBUG'] = os.getenv('DEBUG', 'true').lower() == 'true'
     app.config['CORS_ORIGINS'] = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
     app.config['API_PREFIX'] = os.getenv('API_PREFIX', '/api/v1')
+    bcrypt.init_app(app)
 
     # --------------------------
     # Initialize extensions

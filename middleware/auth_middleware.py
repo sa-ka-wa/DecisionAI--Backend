@@ -2,6 +2,7 @@ from functools import wraps
 from flask import request, jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 from models.user import User
+from marshmallow import ValidationError
 import jwt
 from datetime import datetime
 
@@ -74,17 +75,21 @@ def validate_request(schema):
         def wrapper(*args, **kwargs):
             try:
                 data = request.get_json()
-                errors = schema.validate(data) if schema else {}
+                if schema:
+                    try:
+                        # Use load to get deserialized (converted) data, e.g., datetimes
+                        validated = schema.load(data)
+                    except ValidationError as err:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Validation failed',
+                            'errors': err.messages
+                        }), 400
+                else:
+                    validated = data
 
-                if errors:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Validation failed',
-                        'errors': errors
-                    }), 400
-
-                # Add validated data to request
-                request.validated_data = data
+                # Add validated (deserialized) data to request
+                request.validated_data = validated
                 return fn(*args, **kwargs)
 
             except Exception as e:

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from flask_bcrypt import generate_password_hash, check_password_hash
-from extensions import db
+# from flask_bcrypt import generate_password_hash, check_password_hash
+from extensions import db, bcrypt
 import uuid
 
 
@@ -34,18 +34,18 @@ class User(db.Model):
     # Relationships
     tasks = db.relationship('Task', backref='user', lazy=True, cascade='all, delete-orphan')
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if 'password' in kwargs:
-            self.set_password(kwargs['password'])
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     if 'password' in kwargs:
+    #         self.set_password(kwargs['password'])
 
     def set_password(self, password):
         """Hash and set password"""
-        self.password_hash = generate_password_hash(password).decode('utf-8')
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         """Verify password"""
-        return check_password_hash(self.password_hash, password)
+        return bcrypt.check_password_hash(self.password_hash, password)
 
     def update_last_login(self):
         """Update last login timestamp"""

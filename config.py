@@ -4,14 +4,37 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def normalize_database_url(url: str | None):
+    """
+    Fix Render / Heroku postgres:// URLs for SQLAlchemy
+    """
+    if not url:
+        return None
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql://", 1)
+    return url
+
 
 class Config:
     # Flask Configuration
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+    DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+    # --------------------
+    # Database (PostgreSQL only)
+    # --------------------
+    DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL"))
+
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set")
 
     # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///decisionai.db')
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
 
     # JWT Configuration
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
@@ -38,9 +61,16 @@ class Config:
     # AI Settings
     AI_ENABLED = bool(os.getenv('OPENAI_API_KEY'))
 
-    # Security
-    BCRYPT_LOG_ROUNDS = 12
 
+    # --------------------
+    # Security
+    # --------------------
+    BCRYPT_LOG_ROUNDS = int(os.getenv("BCRYPT_LOG_ROUNDS", 12))
+
+    # --------------------
+    # API
+    # --------------------
+    API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -49,13 +79,12 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    # Production database
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_ECHO = False
 
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:postgres@localhost:5432/decisionai_test"
     WTF_CSRF_ENABLED = False
 
 

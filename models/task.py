@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from extensions import db
 import uuid
 
@@ -25,8 +25,8 @@ class Task(db.Model):
     # Status tracking
     status = db.Column(db.String(20), default='pending')  # pending, in-progress, completed, blocked, archived
     progress = db.Column(db.Integer, default=0)  # 0-100
-    due_date = db.Column(db.DateTime, nullable=False)
-    completed_at = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime(timezone=True), nullable=False)  # CHANGED: Added timezone=True
+    completed_at = db.Column(db.DateTime(timezone=True))  # CHANGED: Added timezone=True
 
     # AI insights
     ai_insights = db.Column(db.JSON, default={
@@ -37,9 +37,10 @@ class Task(db.Model):
     })
 
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    started_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))  # CHANGED
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc))  # CHANGED
+    started_at = db.Column(db.DateTime(timezone=True))  # CHANGED: Added timezone=True
 
     # Indexes
     __table_args__ = (
@@ -51,9 +52,8 @@ class Task(db.Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Ensure due_date is datetime
-        if 'due_date' in kwargs and isinstance(kwargs['due_date'], str):
-            self.due_date = datetime.fromisoformat(kwargs['due_date'].replace('Z', '+00:00'))
+        # Don't convert due_date here - let SQLAlchemy handle it
+        # The validator already ensures it's a proper datetime
 
     def to_dict(self):
         """Convert task to dictionary"""
@@ -86,7 +86,19 @@ class Task(db.Model):
         """Check if task is overdue"""
         if self.status == 'completed':
             return False
-        return self.due_date and self.due_date < datetime.utcnow()
+        if not self.due_date:
+            return False
+
+        # Ensure both datetimes are timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+
+        # If due_date is naive, make it UTC-aware
+        if self.due_date.tzinfo is None:
+            due_date_utc = self.due_date.replace(tzinfo=timezone.utc)
+        else:
+            due_date_utc = self.due_date.astimezone(timezone.utc)
+
+        return due_date_utc < now
 
     @property
     def task_score(self):
@@ -98,7 +110,17 @@ class Task(db.Model):
         """Calculate days until due date"""
         if not self.due_date or self.status == 'completed':
             return None
-        delta = self.due_date - datetime.utcnow()
+
+        # Ensure both datetimes are timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+
+        # If due_date is naive, make it UTC-aware
+        if self.due_date.tzinfo is None:
+            due_date_utc = self.due_date.replace(tzinfo=timezone.utc)
+        else:
+            due_date_utc = self.due_date.astimezone(timezone.utc)
+
+        delta = due_date_utc - now
         return delta.days
 
     def update_progress(self, progress):
@@ -109,7 +131,7 @@ class Task(db.Model):
         self.progress = progress
         if progress == 100 and self.status != 'completed':
             self.status = 'completed'
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now(timezone.utc)  # CHANGED
             # Update user stats
             self.user.update_stats('task_completed', self.impact)
 
@@ -117,11 +139,10 @@ class Task(db.Model):
         """Mark task as started"""
         if self.status == 'pending':
             self.status = 'in-progress'
-            self.started_at = datetime.utcnow()
+            self.started_at = datetime.now(timezone.utc)  # CHANGED
 
     def __repr__(self):
         return f'<Task {self.title}>'
-
 
 class TaskHistory(db.Model):
     """Track task history for audit and analytics"""

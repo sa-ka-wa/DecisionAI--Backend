@@ -1,7 +1,7 @@
 # utils/validators.py
-from marshmallow import Schema, fields, validate, validates, ValidationError
+from marshmallow import Schema, fields, validate, validates, ValidationError, post_load, EXCLUDE
 from email_validator import validate_email, EmailNotValidError
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 
 
@@ -63,12 +63,27 @@ class CreateTaskSchema(Schema):
     complexity = fields.Integer(validate=validate.Range(min=1, max=5))
     estimated_hours = fields.Float(validate=validate.Range(min=0.1, max=1000))
 
+    class Meta:
+        unknown = EXCLUDE
+
     @validates('due_date')
     def validate_due_date(self, value):
-        if value < datetime.utcnow():
-            raise ValidationError('Due date cannot be in the past')
+        """
+        Ensure due_date is in the future
+        """
+        # Get current time in UTC (timezone-aware)
+        now = datetime.now(timezone.utc)
 
+        # Convert input to UTC timezone-aware datetime
+        # If input is naive, treat it as UTC
+        if value.tzinfo is None:
+            value_utc = value.replace(tzinfo=timezone.utc)
+        else:
+            value_utc = value.astimezone(timezone.utc)
 
+        # Validate: due_date must be in the future
+        if value_utc <= now:
+            raise ValidationError('Due date must be in the future')
 class UpdateTaskSchema(Schema):
     """Schema for updating a task"""
     title = fields.String(validate=validate.Length(min=1, max=200))
@@ -82,6 +97,9 @@ class UpdateTaskSchema(Schema):
     tags = fields.List(fields.String())
     complexity = fields.Integer(validate=validate.Range(min=1, max=5))
     estimated_hours = fields.Float(validate=validate.Range(min=0.1, max=1000))
+
+    class Meta:
+        unknown = EXCLUDE
 
 
 class TaskStatusSchema(Schema):
@@ -97,6 +115,9 @@ class TaskProgressSchema(Schema):
 class BulkTaskSchema(Schema):
     """Schema for bulk task operations"""
     tasks = fields.List(fields.Dict(), required=True)
+
+    class Meta:
+        unknown = EXCLUDE
 
 
 # Export all schemas
