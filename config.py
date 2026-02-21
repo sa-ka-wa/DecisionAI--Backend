@@ -42,7 +42,7 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     # CORS Configuration
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000, https://frontend-7fv90ds3k-sakawas-projects.vercel.app').split(',')
 
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
