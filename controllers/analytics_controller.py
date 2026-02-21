@@ -520,8 +520,7 @@ def get_productivity_score(user):
                 },
                 'daily_completions': daily_completions,
                 'level': 'High' if productivity_score >= 80 else 'Medium' if productivity_score >= 60 else 'Low',
-                'recommendations': self._get_productivity_recommendations(productivity_score, completion_rate,
-                                                                          on_time_rate)
+                'recommendations': self._get_productivity_recommendations(productivity_score, completion_rate, on_time_rate)
             }
         })
 
